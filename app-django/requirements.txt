@@ -1,0 +1,8 @@
+django
+djangorestframework
+pyspark
+yfinance
+pandas
+pyarrow
+torch
+tensorflow
