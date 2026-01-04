@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project 
+	xmlns="http://maven.apache.org/POM/4.0.0" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  
+  <groupId>com.aashish22bansal.hadoop</groupId>
+  <artifactId>hadoop-finance</artifactId>
+  <version>0.0.6</version>
+  
+  <packaging>jar</packaging>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <hadoop.version>3.3.6</hadoop.version>
+    </properties>
+  
+  <dependencies>
+    	<dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+            <version>3.1.1</version>
+      	</dependency>
+        <!-- Hadoop core libraries -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+            <version>3.3.6</version>
+    		<exclusions>
+        		<exclusion>
+            		<groupId>org.slf4j</groupId>
+            		<artifactId>slf4j-reload4j</artifactId>
+        		</exclusion>
+    		</exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-mapreduce-client-core</artifactId>
+            <version>3.3.6</version>
+    		<exclusions>
+        		<exclusion>
+            		<groupId>org.slf4j</groupId>
+            		<artifactId>slf4j-reload4j</artifactId>
+        		</exclusion>
+    		</exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-mapreduce-client-jobclient</artifactId>
+            <version>3.3.6</version>
+    		<exclusions>
+        		<exclusion>
+            		<groupId>org.slf4j</groupId>
+            		<artifactId>slf4j-reload4j</artifactId>
+        		</exclusion>
+    		</exclusions>
+        </dependency>
+        
+        <dependency>
+    		<groupId>org.apache.hadoop</groupId>
+    		<artifactId>hadoop-hdfs-client</artifactId>
+    		<version>3.4.1</version>
+		</dependency>
+		
+    	<!-- Spark Core -->
+    	<dependency>
+	        <groupId>org.apache.spark</groupId>
+    	    <artifactId>spark-core_2.12</artifactId>
+        	<version>3.5.7</version>
+    	</dependency>
+
+    	<!-- Spark SQL -->
+    	<dependency>
+        	<groupId>org.apache.spark</groupId>
+        	<artifactId>spark-sql_2.12</artifactId>
+        	<version>3.5.7</version>
+    	</dependency>
+
+    	<!-- Add other Spark modules if needed (MLlib, Streaming, Connect) -->
+    	<dependency>
+	        <groupId>org.apache.spark</groupId>
+        	<artifactId>spark-mllib_2.12</artifactId>
+        	<version>3.5.7</version>
+    	</dependency>
+
+    	<!-- If using Spark Connect (new in Spark 4.x) -->
+    	<dependency>
+        	<groupId>org.apache.spark</groupId>
+        	<artifactId>spark-connect_2.12</artifactId>
+        	<version>3.5.7</version>
+    	</dependency>
+
+  </dependencies>
+  <build>
+    	<plugins>
+      		<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+    			<artifactId>maven-compiler-plugin</artifactId>
+				<!--<artifactId>maven-shade-plugin</artifactId>-->
+            	<version>3.8.1</version>
+        	    <configuration>
+    	            <source>1.8</source>
+	                <target>1.8</target>
+            	</configuration>
+				<executions>
+	  				<execution>
+	    				<phase>package</phase>
+	    				<goals>
+	    	  				<!--<goal>shade</goal>-->
+		    			</goals>
+		  			</execution>
+				</executions>
+				<!--<configuration>-->
+	  				<!--<finalName>uber-hadoop-0.0.1-SNAPSHOT</finalName>-->
+				<!--</configuration>-->
+      		</plugin> 
+      		<plugin>
+    			<groupId>org.apache.maven.plugins</groupId>
+    			<artifactId>maven-shade-plugin</artifactId>
+    			<version>3.4.1</version>
+    			<executions>
+        			<execution>
+            			<phase>package</phase>
+            			<goals>
+                			<goal>shade</goal>
+            			</goals>
+            			<configuration>
+                        	<filters>
+                            	<filter>
+                                	<artifact>*:*</artifact>
+                                	<excludes>
+                                    	<exclude>META-INF/*.SF</exclude>
+                                    	<exclude>META-INF/*.DSA</exclude>
+                                    	<exclude>META-INF/*.RSA</exclude>
+                                	</excludes>
+                            	</filter>
+                        	</filters>
+                			<createDependencyReducedPom>false</createDependencyReducedPom>
+                			<transformers>
+                    			<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        			<mainClass>com.aashish22bansal.hadoop.financial.mapreduce.OHLCVDriver</mainClass>
+                    			</transformer>
+                			</transformers>
+            			</configuration>
+        			</execution>
+    			</executions>
+			</plugin>
+    	</plugins>
+  	</build>
+</project>

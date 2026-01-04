@@ -2,6 +2,7 @@ django
 djangorestframework
 pyspark
 yfinance
+plotly
 pandas
 pyarrow
 torch

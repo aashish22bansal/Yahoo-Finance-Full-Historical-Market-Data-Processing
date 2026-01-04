@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POM.xml Documentation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1024px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        h1, h2, h3, h4 {
+            color: #2c3e50;
+        }
+        h1 {
+            border-bottom: 3px solid #16a085;
+            padding-bottom: 10px;
+        }
+        h2 {
+            border-bottom: 2px solid #bdc3c7;
+            padding-bottom: 8px;
+            margin-top: 40px;
+        }
+        h3 {
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        code {
+            background-color: #ecf0f1;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            font-size: 1em;
+        }
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .dependency-card, .plugin-card {
+            border: 1px solid #ddd;
+            border-left: 5px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .plugin-card {
+             border-left-color: #9b59b6;
+        }
+        .coordinates, .exclusion-info {
+             background-color: #f9f9f9;
+             padding: 10px;
+             border: 1px solid #eee;
+             border-radius: 4px;
+             font-family: monospace;
+        }
+        .exclusion-info {
+            border-left: 3px solid #e74c3c;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Maven POM.xml Documentation</h1>
+        <div class="section">
+            <p>This document provides a detailed breakdown of the <code>pom.xml</code> file for the <strong>hadoop</strong> project. The POM (Project Object Model) is the fundamental unit of work in Maven. It is an XML file that contains information about the project and configuration details used by Maven to build the project.</p>
+        </div>
+
+        <div class="section">
+            <h2 id="coordinates">Project Coordinates</h2>
+            <p>Maven coordinates are a set of identifiers that uniquely define a project. They consist of a group ID, an artifact ID, and a version.</p>
+            <div class="coordinates">
+                <strong>Group ID:</strong> <code>com.aashish22bansal</code><br>
+                <strong>Artifact ID:</strong> <code>hadoop</code><br>
+                <strong>Version:</strong> <code>0.0.1-SNAPSHOT</code>
+            </div>
+            <ul>
+                <li><code>groupId</code>: Typically identifies the organization or group that created the project.</li>
+                <li><code>artifactId</code>: A unique name for the project's deliverable (e.g., the JAR or WAR file).</li>
+                <li><code>version</code>: The specific release of the project. <code>SNAPSHOT</code> indicates a development version.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2 id="dependencies">Dependencies</h2>
+            <p>Dependencies are external libraries required by the project. Maven automatically downloads and manages these libraries.</p>
+
+            <div class="dependency-card">
+                <h3>Apache Hadoop Client</h3>
+                <div class="coordinates">org.apache.hadoop:hadoop-client:3.1.1</div>
+                <p>This is a convenient aggregator dependency that pulls in the most common client-side libraries needed to interact with a Hadoop cluster, including those for HDFS, YARN, and MapReduce. It simplifies dependency management for applications that need to communicate with Hadoop.</p>
+            </div>
+
+            <div class="dependency-card">
+                <h3>Apache Hadoop Common</h3>
+                <div class="coordinates">org.apache.hadoop:hadoop-common:3.3.6</div>
+                <p>Provides the fundamental utilities and libraries shared across all Hadoop components. It contains essential functionalities for I/O, configuration management, security, and the core APIs that HDFS, YARN, and MapReduce are built upon.</p>
+                <div class="exclusion-info">
+                    <strong>Exclusion:</strong> <code>org.slf4j:slf4j-reload4j</code><br>
+                    This exclusion prevents Maven from including the <code>slf4j-reload4j</code> logging implementation. This is often done to avoid logging conflicts and allow the project to explicitly define its own logging framework (like Log4j or Logback).
+                </div>
+            </div>
+
+            <div class="dependency-card">
+                <h3>Hadoop MapReduce Client Core</h3>
+                <div class="coordinates">org.apache.hadoop:hadoop-mapreduce-client-core:3.3.6</div>
+                <p>This contains the core classes and interfaces essential for writing MapReduce applications. It provides the fundamental API for the MapReduce programming model (e.g., <code>Mapper</code>, <code>Reducer</code> classes) that developers use to create data processing jobs.</p>
+                 <div class="exclusion-info">
+                    <strong>Exclusion:</strong> <code>org.slf4j:slf4j-reload4j</code>
+                </div>
+            </div>
+            
+            <div class="dependency-card">
+                <h3>Hadoop MapReduce Client JobClient</h3>
+                <div class="coordinates">org.apache.hadoop:hadoop-mapreduce-client-jobclient:3.3.6</div>
+                <p>Provides the <code>JobClient</code> API, which is the primary interface for submitting MapReduce jobs to the cluster, monitoring their progress, and retrieving results and logs. It acts as the bridge between the user's application and the Hadoop cluster's resource manager.</p>
+                 <div class="exclusion-info">
+                    <strong>Exclusion:</strong> <code>org.slf4j:slf4j-reload4j</code>
+                </div>
+            </div>
+
+            <div class="dependency-card">
+                <h3>Hadoop HDFS Client</h3>
+                <div class="coordinates">org.apache.hadoop:hadoop-hdfs-client:3.4.1</div>
+                <p>Contains the client-side libraries needed to interact programmatically with the Hadoop Distributed File System (HDFS). It allows the application to perform file operations like reading, writing, creating directories, and managing permissions on HDFS.</p>
+            </div>
+            
+            <div class="dependency-card">
+                <h3>Apache Spark Core</h3>
+                <div class="coordinates">org.apache.spark:spark-core_2.12:3.5.7</div>
+                <p>The foundation of the entire Spark platform. It provides the core execution engine, in-memory computing capabilities, and the primary programming abstraction: the Resilient Distributed Dataset (RDD). All other Spark libraries are built on top of Spark Core.</p>
+            </div>
+
+            <div class="dependency-card">
+                <h3>Apache Spark SQL</h3>
+                <div class="coordinates">org.apache.spark:spark-sql_2.12:3.5.7</div>
+                <p>A Spark module for structured data processing. It introduces DataFrames and Datasets, which provide a higher-level API over RDDs, and allows for querying data via SQL. It includes a powerful optimizer (Catalyst) for high performance.</p>
+            </div>
+
+            <div class="dependency-card">
+                <h3>Apache Spark MLlib</h3>
+                <div class="coordinates">org.apache.spark:spark-mllib_2.12:3.5.7</div>
+                <p>Spark's scalable machine learning library. It provides common ML algorithms for classification, regression, clustering, and collaborative filtering, as well as tools for building ML pipelines.</p>
+            </div>
+
+            <div class="dependency-card">
+                <h3>Apache Spark Connect</h3>
+                <div class="coordinates">org.apache.spark:spark-connect_2.12:3.5.7</div>
+                <p>Enables a decoupled client-server architecture for Spark. It allows applications (from IDEs, notebooks, etc.) to connect to and interact with a remote Spark cluster using the DataFrame API, without embedding a full Spark driver.</p>
+            </div>
+
+        </div>
+
+        <div class="section">
+            <h2 id="build">Build Configuration</h2>
+            <p>The <code>&lt;build&gt;</code> section defines how the project is built, including specifying plugins that perform tasks like compiling code and packaging deliverables.</p>
+
+            <div class="plugin-card">
+                <h3>Maven Compiler Plugin</h3>
+                <div class="coordinates">org.apache.maven.plugins:maven-compiler-plugin:3.8.1</div>
+                <p>This plugin is responsible for compiling the Java source code (<code>.java</code> files) into bytecode (<code>.class</code> files). This POM has it configured to ensure the code is compatible with Java 1.8.</p>
+                <pre><code>&lt;configuration&gt;
+    &lt;source&gt;1.8&lt;/source&gt;
+    &lt;target&gt;1.8&lt;/target&gt;
+&lt;/configuration&gt;</code></pre>
+                <ul>
+                    <li><code>&lt;source&gt;1.8&lt;/source&gt;</code>: Tells the compiler that the source code is written in Java 8.</li>
+                    <li><code>&lt;target&gt;1.8&lt;/target&gt;</code>: Instructs the compiler to generate bytecode that is compatible with a Java 8 JVM.</li>
+                </ul>
+                <p><em>Note: This POM file lists two versions of the compiler plugin. Maven uses the more specific definition, so version <code>3.8.1</code> with the Java 1.8 configuration is the one that takes effect.</em></p>
+            </div>
+
+            <div class="plugin-card">
+                <h3>Maven Shade Plugin</h3>
+                <div class="coordinates">org.apache.maven.plugins:maven-shade-plugin:3.4.1</div>
+                <p>This powerful plugin is used to create an "uber-JAR" (or "fat JAR"). An uber-JAR contains the project's own code plus all of its dependencies packaged into a single, executable file. This is extremely useful for Hadoop and Spark jobs, as it simplifies submitting the application to the cluster.</p>
+                <h4>Configuration Details:</h4>
+                <ul>
+                    <li><strong>Goal:</strong> The <code>shade</code> goal is bound to the <code>package</code> phase, so the uber-JAR is created when you run <code>mvn package</code>.</li>
+                    <li><code>&lt;createDependencyReducedPom&gt;false&lt;/createDependencyReducedPom&gt;</code>: Prevents the plugin from creating an additional, simplified POM file.</li>
+                    <li><strong>Transformers:</strong> Transformers modify files within the JAR during the shading process.
+                        <ul>
+                            <li><code>ManifestResourceTransformer</code>: This transformer is used to create or modify the <code>META-INF/MANIFEST.MF</code> file inside the JAR. Here, it's configured to set the <code>mainClass</code> attribute, which makes the resulting JAR directly executable with <code>java -jar ...</code>.</li>
+                        </ul>
+                    </li>
+                </ul>
+                <pre><code>&lt;configuration&gt;
+    &lt;transformers&gt;
+        &lt;transformer implementation="..."&gt;
+            &lt;mainClass&gt;com.hadoop.example.WordCount&lt;/mainClass&gt;
+        &lt;/transformer&gt;
+    &lt;/transformers&gt;
+&lt;/configuration&gt;</code></pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

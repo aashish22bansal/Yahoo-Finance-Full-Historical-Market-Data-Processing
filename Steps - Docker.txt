@@ -1,0 +1,28 @@
+docker-compose up -d
+docker exec -it namenode bash
+
+hdfs dfs -rm -r /financial/yahoo/output
+hadoop jar /opt/hadoop-finance.jar com.aashish22bansal.hadoop.financial.mapreduce.OHLCVDriver /financial/yahoo/input /financial/yahoo/output
+
+
+ls /opt
+
+Command to copy the file from temporary directory into required directory: hdfs dfs -put /opt/sample_ohlcv.csv /financial/input/
+
+hdfs dfs -ls /financial/input
+
+jar tf /opt/hadoop-finance.jar | grep OHLCVDriver
+
+hdfs dfs -rm -r /financial/output
+
+yarn logs -applicationId <app_id>
+
+hdfs dfs -cat /financial/input/sample_ohlcv.csv | head -n 5
+
+hdfs dfs -ls /financial/output
+hdfs dfs -cat /financial/output/part-r-00000
+hdfs dfs -get /financial/yahoo/output /tmp/yahoo_output
+docker cp namenode:/tmp/yahoo_output ./data/processed/
+
+
+

@@ -1,0 +1,6 @@
+mvn clean package -DskipTests
+docker cp target/hadoop-finance-0.0.6.jar namenode:/opt/hadoop-finance.jar
+
+
+jar tf target/hadoop-finance-1.0.jar | grep OHLCVDriver
+
