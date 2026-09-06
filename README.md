@@ -1,6 +1,10 @@
 # Yahoo Finance Full Historical Market Data Processing
 
+[![CI](https://github.com/aashish22bansal/Yahoo-Finance-Full-Historical-Market-Data-Processing/actions/workflows/ci.yml/badge.svg)](https://github.com/aashish22bansal/Yahoo-Finance-Full-Historical-Market-Data-Processing/actions/workflows/ci.yml)
+
 A learning project for building a big-data pipeline around free historical stock market data: ingest OHLCV (Open/High/Low/Close/Volume) data from Yahoo Finance, aggregate it with Hadoop MapReduce on a Dockerized cluster, and orchestrate the whole thing from a Django control layer — with Spark feature engineering and GPU deep learning planned as the next stages.
+
+See [ABOUT.md](ABOUT.md) for a more detailed walkthrough of the architecture and each component.
 
 ## Status
 
