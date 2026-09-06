@@ -121,4 +121,4 @@ python manage.py runserver
 
 ## License
 
-GPLv3 — see [LICENSE](LICENSE).
+Custom Attribution-Required License — any use, modification, or deployment of this project (including as a service) must give clear, visible credit to the original author and link back to this repository. See [LICENSE](LICENSE) for the full terms.
