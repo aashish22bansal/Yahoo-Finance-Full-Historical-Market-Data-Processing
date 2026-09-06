@@ -1,10 +1,8 @@
 # Yahoo Finance Full Historical Market Data Processing
 
-[![CI](https://github.com/aashish22bansal/Yahoo-Finance-Full-Historical-Market-Data-Processing/actions/workflows/ci.yml/badge.svg)](https://github.com/aashish22bansal/Yahoo-Finance-Full-Historical-Market-Data-Processing/actions/workflows/ci.yml)
-
 A learning project for building a big-data pipeline around free historical stock market data: ingest OHLCV (Open/High/Low/Close/Volume) data from Yahoo Finance, aggregate it with Hadoop MapReduce on a Dockerized cluster, and orchestrate the whole thing from a Django control layer — with Spark feature engineering and GPU deep learning planned as the next stages.
 
-See [ABOUT.md](ABOUT.md) for a more detailed walkthrough of the architecture and each component.
+See [ABOUT.md](ABOUT.md) for a more detailed walkthrough of the architecture and each component, or the [hosted project page](https://aashish22bansal.github.io/Yahoo-Finance-Full-Historical-Market-Data-Processing/) (live once GitHub Pages is enabled for this repo — see the note under License).
 
 ## Status
 
@@ -126,3 +124,7 @@ python manage.py runserver
 ## License
 
 Custom Attribution-Required License — any use, modification, or deployment of this project (including as a service) must give clear, visible credit to the original author and link back to this repository. See [LICENSE](LICENSE) for the full terms.
+
+## Hosted project page
+
+A GitHub Actions workflow (`.github/workflows/pages.yml`) renders [ABOUT.md](ABOUT.md) to a static page and deploys it to GitHub Pages on every push to `main`. One-time setup required: in this repo's Settings → Pages, set "Source" to "GitHub Actions".

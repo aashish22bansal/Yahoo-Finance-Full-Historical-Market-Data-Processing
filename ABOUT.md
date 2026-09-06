@@ -1,93 +1,355 @@
-# About this project
+# Yahoo Finance Full Historical Market Data Processing
 
-## Why this exists
+> A learning project that pulls free historical stock market data from Yahoo Finance and aggregates it with Hadoop MapReduce on a Dockerized cluster — with Spark feature engineering and GPU deep learning forecasting as the next stages.
 
-This is a personal learning project. The goal isn't to ship a production trading platform — it's to build hands-on understanding of a distributed data-processing stack by actually building each layer: Hadoop MapReduce for batch aggregation, Spark for feature engineering, Django as an orchestration layer, and GPU-based deep learning for forecasting. Each piece is deliberately built by hand rather than through a managed service, because the point is to understand *how* the pieces work, not just to get an answer out of them.
+**Type:** Data Engineering / Distributed Systems (learning project)
+**Status:** Active, early-stage — one pipeline stage fully working, the rest in progress
+**Difficulty:** Intermediate
+**Primary Goal:** Learn Hadoop, Spark, and a GPU deep-learning workflow by building each layer directly, using real historical market data as the working example
 
-Yahoo Finance's historical OHLCV (Open/High/Low/Close/Volume) data is a good fit for this: it's free, it's naturally time-series shaped, it scales from a handful of tickers up to thousands (and tens of gigabytes) without changing the problem, and the eventual outputs (aggregates, features, forecasts) are easy to sanity-check against public knowledge of how a stock actually behaved.
+| Aspect       | Details                                                                 |
+| ------------ | ------------------------------------------------------------------------ |
+| Problem      | Historical OHLCV data across many tickers is tedious to aggregate by hand |
+| Users        | The author, as a hands-on way to learn distributed data processing       |
+| Input        | Daily OHLCV CSVs per ticker, pulled from Yahoo Finance via `yfinance`     |
+| Processing   | Hadoop MapReduce aggregation today; Spark features and GPU forecasting planned |
+| Output       | Monthly OHLCV aggregates per ticker (today); model forecasts (planned)   |
+| Technologies | Java/Hadoop/Maven, Docker, Python/Django, yfinance/pandas                |
+| Architecture | Batch                                                                     |
+| Scale        | A handful of tickers today; designed to scale to thousands               |
 
-## Architecture, and why each stage exists
+**If you only have 30 seconds:** this project takes daily stock price CSVs, aggregates them into monthly OHLCV summaries using a hand-written Hadoop MapReduce job running on a Dockerized cluster, and is being extended with a Spark feature-engineering stage and a GPU deep-learning forecasting stage.
+
+---
+
+## 1. The Problem
+
+Yahoo Finance makes decades of daily OHLCV (Open/High/Low/Close/Volume) data available for free, for thousands of tickers. That's exactly the kind of dataset that's simple to reason about at a small scale but tedious and error-prone to process by hand once you're looking at years of data across more than a few symbols:
 
 ```
-Yahoo Finance
-     │  yfinance
+RAW DATA
+   │
+   ├── one CSV per ticker, per year of history
+   ├── every row is daily, not aggregated
+   ├── manually computing monthly Open/High/Low/Close/Volume per ticker
+   │   doesn't scale past a handful of symbols
+   └── doing it by hand also teaches you nothing about distributed processing
+            │
+            ▼
+   HARD TO AGGREGATE, AND NOT A LEARNING OPPORTUNITY IF YOU SCRIPT IT IN PANDAS ALONE
+```
+
+## 2. The Idea / Solution
+
+Rather than reach for pandas and call it done, the project deliberately routes the aggregation step through Hadoop MapReduce running on a real (if single-node, Dockerized) cluster — because the point of this project is to learn the mechanics of distributed batch processing, not just get the aggregated numbers.
+
+```
+                ┌───────────────┐
+                │ Yahoo Finance │
+                └───────┬───────┘
+                        ▼
+                ┌───────────────┐
+                │  Ingestion    │  yfinance, per ticker
+                └───────┬───────┘
+                        ▼
+                ┌───────────────┐
+                │     HDFS      │  raw CSV storage
+                └───────┬───────┘
+                        ▼
+                ┌───────────────┐
+                │ MapReduce Job │  monthly OHLCV aggregation   ✅ working
+                └───────┬───────┘
+                        ▼
+                ┌───────────────┐
+                │     HDFS      │  processed output
+                └───────┬───────┘
+                        ▼
+                ┌───────────────┐
+                │     Spark     │  feature engineering          🚧 planned
+                └───────┬───────┘
+                        ▼
+                ┌───────────────┐
+                │  GPU Deep     │  LSTM / Transformer forecasting  🚧 planned
+                │  Learning     │
+                └───────────────┘
+```
+
+## 3. Project Story
+
+```
+v0.0 — Hadoop WordCount
+   │   A stock Spring/Maven WordCount example, imported purely to get a
+   │   working Hadoop + Maven + JDK toolchain running locally.
+   ↓
+v0.1 — Repurposed for finance
+   │   WordCount's mapper/reducer replaced with OHLCV-specific logic;
+   │   package renamed to com.aashish22bansal.hadoop.financial.mapreduce.
+   ↓
+v0.2 — Dockerized cluster
+   │   Adopted a cloned big-data-europe Hadoop Docker Compose setup so the
+   │   job runs against namenode/datanode/resourcemanager containers
+   │   instead of a manual local Hadoop install.
+   ↓
+v0.3 — Data ingestion + Django scaffolding
+   │   yfinance-based ingestion script pulling real ticker CSVs; a Django
+   │   project scaffolded as the intended control plane, with a working
+   │   ingestion app and dashboard shell.
+   ↓
+v0.4 (current) — Documentation and project hygiene
+       Rewriting README/ABOUT/LICENSE to reflect what's actually built,
+       and adding a hosted project page — the stage this document
+       describes.
+```
+
+## 4. Key Features
+
+```
+                PROJECT CAPABILITIES
+
+       ┌────────────┐
+       │  INGEST    │   yfinance → per-ticker daily OHLCV CSVs      ✅
+       └─────┬──────┘
+             │
+       ┌─────▼──────┐
+       │ AGGREGATE  │   Hadoop MapReduce → monthly OHLCV per ticker ✅
+       └─────┬──────┘
+             │
+       ┌─────▼──────┐
+       │ TRANSFORM  │   Spark feature engineering (returns, RSI, MACD) 🚧
+       └─────┬──────┘
+             │
+       ┌─────▼──────┐
+       │ FORECAST   │   GPU-trained LSTM/Transformer price forecasting 🚧
+       └────────────┘
+```
+
+- **INGEST** — `app-django/apps/app_ingest/download.py` pulls historical OHLCV data for a set of tickers via `yfinance` and writes it to CSV.
+- **AGGREGATE** — the Hadoop job in `app-hadoop/hadoop-finance/` reduces daily rows into one row per ticker-month, with Open/High/Low/Close/Volume computed correctly across the month.
+- **TRANSFORM** (planned) — the `etl/` scripts are early drafts of a Spark pipeline that will clean data, engineer features, and build time-series windows.
+- **FORECAST** (planned) — `dl/` is reserved for model definitions and training scripts once there's a feature dataset to train on.
+
+## 5. Architecture
+
+Same pipeline as above, with each component's role:
+
+- **Django (control plane)** — not a data processor. Its job is to trigger ingestion and (eventually) the Hadoop/Spark/DL jobs, and present status/results. Keeping it this way means heavy computation never blocks a web request.
+- **HDFS (Dockerized)** — the shared storage layer between pipeline stages, running inside a cloned [big-data-europe](https://github.com/big-data-europe) Hadoop cluster (`docker/docker-hadoop/`), rather than a manually-installed local Hadoop.
+- **Hadoop MapReduce** — does the one thing MapReduce is genuinely good at here: partition daily records by ticker/month, aggregate independently per partition, combine, and reduce. See "Under the Hood" below for the actual mapper/combiner/reducer logic.
+- **Spark (planned)** — takes over once the data is aggregate-shaped, for the DataFrame-style transformations (technical indicators, windowing) that would be awkward to hand-write as MapReduce jobs.
+- **GPU training (planned)** — isolated to the one stage that actually benefits from it, keeping every earlier stage runnable on CPU with a bounded memory budget.
+
+## 6. Technology Stack
+
+| Technology         | Role                          | Why                                                                 |
+| ------------------ | ------------------------------ | -------------------------------------------------------------------- |
+| Java 8 / Maven      | Hadoop job build               | Matches the Hadoop 3.x client libraries' most broadly compatible target |
+| Hadoop (MapReduce)  | Batch OHLCV aggregation        | The concrete, hands-on way to learn map/combine/reduce semantics    |
+| Docker Compose      | Local Hadoop cluster           | Runs namenode/datanode/resourcemanager without a manual multi-node install |
+| Python / Django     | Orchestration control plane    | Familiar web framework to build a job-triggering UI/API on top of   |
+| yfinance / pandas   | Data acquisition               | Free, simple access to decades of OHLCV history                     |
+| Spark (planned)     | Feature engineering            | DataFrame transformations are far more ergonomic than raw MapReduce for this stage |
+| PyTorch/TensorFlow (planned) | Forecasting models   | GPU-accelerated training for LSTM/Transformer architectures         |
+
+## 7. Data Flow (record-level)
+
+```
+RAW CSV ROW (date, open, high, low, close, volume)
+    │
+    ▼
+MAPPER — parses the row, extracts ticker symbol from the filename,
+         emits key "SYMBOL|YYYY-MM" → OHLCV record
+    │
+    ▼
+COMBINER — partially aggregates OHLCV records sharing a key within
+           the same map task, to cut network shuffle volume
+    │
+    ▼
+REDUCER — merges all records for a key: first Open, max High,
+          min Low, last Close, summed Volume
+    │
+    ▼
+OUTPUT — one line per ticker-month: "AAPL|2020-01 -> Open=... High=... Low=... Close=... Volume=..."
+```
+
+## 8. Project Structure
+
+```
+Yahoo-Finance-Full-Historical-Market-Data-Processing/
+│
+├── app-hadoop/hadoop-finance/   Maven project — the OHLCV MapReduce job (working)
+├── app-django/                  Django project — ingestion + dashboard UI
+├── docker/                      Cloned big-data-europe Docker images (docker-hadoop in active use)
+├── data/                        Raw and processed CSVs
+├── etl/                         Early Spark/pandas ETL scripts (not yet wired into a pipeline)
+├── spark/                       Spark job entry points (stub)
+├── dl/                          Deep learning models/training scripts (empty, planned)
+├── config/                      Spark/training config stubs
+├── scripts/                     One-off utilities (e.g. parsing Hadoop job output)
+├── utils/                       Controller stubs Django will use to trigger jobs
+├── site/                        Source for the hosted project page (this file, rendered)
+├── README.md                    Quick-reference: what it is, current status, how to run it
+├── ABOUT.md                     This file — the detailed project outline
+└── LICENSE                      Custom attribution-required license
+```
+
+The Hadoop project is kept fully separate from the Django app and the planned Spark/DL code — each is its own standalone concern (Java/Maven vs. Python/Django vs. Python/Spark vs. Python/GPU), sharing data only through HDFS/the filesystem, not through direct code coupling.
+
+## 9. Design Decisions
+
+**Why Hadoop MapReduce for the aggregation stage, instead of just pandas?**
+Because the point of this project is learning distributed processing mechanics. Pandas would get the same numbers faster for a handful of tickers, but wouldn't teach anything about partitioning, combiners, or the shuffle phase.
+
+**Why Django as a control plane instead of a processor?**
+Keeping Django limited to triggering/monitoring jobs (rather than parsing CSVs or running MapReduce logic inside a view) means a slow or memory-heavy job never blocks a web request, and each layer (Java/Hadoop, Python/Spark, Python/GPU) can be developed and reasoned about independently.
+
+**Why a Dockerized Hadoop cluster instead of installing Hadoop directly?**
+A cloned Docker Compose setup gets a realistic multi-container cluster (namenode/datanode/resourcemanager/nodemanager/historyserver) running in minutes, and is far easier to reset to a clean state than a manual local install.
+
+**Why Java 8 for the Hadoop job?**
+It's the most broadly compatible target across the Hadoop 3.x client library versions currently declared in `pom.xml`, avoiding version-mismatch issues between the compiled classes and the cluster's runtime.
+
+## 10. Challenges → Solutions
+
+| Challenge                                              | Initial approach                          | Problem                                                 | Solution                                                                 |
+| ------------------------------------------------------- | ------------------------------------------ | -------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Maven build failed with "No compiler is provided"       | Ran `mvn clean compile` with a JRE on PATH | Maven needs `javac`, which a JRE doesn't include         | Installed a full JDK (Temurin 21) and pointed `JAVA_HOME`/`PATH` at it       |
+| `pom.xml` had a duplicate `maven-compiler-plugin` entry  | Left both declarations in place            | Maven warned the effective build model was malformed     | Kept a single compiler-plugin declaration                                   |
+| Mixed Hadoop client versions (3.1.1 and 3.3.6) as deps   | Declared both incidentally                 | Ambiguous effective dependency versions, build warnings  | Documented as a known cleanup item (see Roadmap) rather than silently ignored |
+
+## 11. Performance
+
+Not yet measured. The current pipeline runs against a small number of tickers on a single-node Dockerized cluster; no throughput or timing benchmarks have been collected. This is planned once the pipeline runs against a larger ticker universe.
+
+## 12. Security
+
+```
+Security considerations
+
+✓ No secrets or credentials committed to the repository
+✗ No authentication/authorization layer (not applicable yet — no exposed service)
+✗ No input validation on ingested CSVs beyond basic parsing (future work)
+✗ No dependency vulnerability scanning configured yet (future work)
+```
+
+This is a local, single-user learning project with no exposed network service today, so most of the checklist is genuinely not yet applicable rather than a gap in something that's live.
+
+## 13. Testing
+
+**No automated tests exist yet**, in either the Hadoop project (`app-hadoop/hadoop-finance/` has no `src/test/java` and no JUnit dependency) or the Django project (each app has only the unmodified 3-line Django test stub). This is a real, acknowledged gap — see the Roadmap.
+
+## 14. Under the Hood
+
+The one part of this project with real internals worth walking through is the MapReduce job itself:
+
+```
+                UNDER THE HOOD: OHLCVDriver
+
+Input Split (one CSV file)
+     │
      ▼
-Django ingestion  ──────────────────▶  data/raw/  (CSV, per ticker)
-                                            │
-                                            ▼
-                                   HDFS (Dockerized cluster)
-                                            │
-                                            ▼
-                          Hadoop MapReduce — OHLCV monthly aggregation   ✅ working
-                                            │
-                                            ▼
-                                   HDFS (processed output)
-                                            │
-                                            ▼
-                     Spark — cleaning, feature engineering, windowing    🚧 planned
-                                            │
-                                            ▼
-                GPU deep learning — LSTM / Transformer forecasting       🚧 planned
+OHLCVMapper
+     │  parses each line, reads ticker symbol from the input
+     │  file's name, emits (symbol|month) → OHLCVWritable
+     ▼
+OHLCVCombiner  (runs per map task, before shuffle)
+     │  partially aggregates records sharing a key,
+     │  cutting how much data crosses the network
+     ▼
+      shuffle & sort (Hadoop-managed)
+     │
+     ▼
+OHLCVReducer
+     │  merges all records for a symbol|month key into
+     │  one final OHLCV summary
+     ▼
+Output (HDFS)
 ```
 
-- **Hadoop MapReduce for aggregation.** Turning a few million rows of daily OHLCV data into monthly aggregates per ticker is exactly the kind of embarrassingly-parallel, map-then-reduce problem MapReduce was designed for — each mapper handles one file/split, a combiner does partial aggregation to cut network shuffle, and the reducer produces one row per symbol-month. It's also the most direct way to learn what Hadoop is actually doing under the hood, rather than treating it as a black box.
-- **Spark for feature engineering (planned).** Once data is aggregated, the next step — computing technical indicators, log returns, rolling volatility, and turning a time series into fixed-size windows for a model — is naturally expressed as DataFrame transformations, which Spark handles far more ergonomically than raw MapReduce.
-- **Django as the control plane.** Django is not meant to process data itself. Its job is to trigger the Hadoop/Spark/DL jobs, track their status, and present results — keeping heavy computation out of the request/response cycle entirely.
-- **GPU only for deep learning (planned).** Training an LSTM or Transformer on the processed, windowed dataset is the one stage that actually benefits from a GPU; every earlier stage stays CPU-bound, which also keeps the whole pipeline runnable on a single laptop with a fixed memory budget.
+## 15. Engineering Questions
 
-## Components
+```
+What happens if a CSV row is malformed (missing/extra columns)?
+  → Not handled yet — the mapper assumes well-formed rows. Planned: skip
+    and log malformed rows instead of failing the task.
 
-### `app-hadoop/hadoop-finance/`
+What happens if the Docker cluster restarts mid-job?
+  → Not tested. Hadoop's own task-retry mechanism would likely apply,
+    but this hasn't been verified against this specific setup.
 
-A Maven project (`com.aashish22bansal.hadoop`, artifact `hadoop-finance`) containing the working part of this project: a MapReduce job under `com.aashish22bansal.hadoop.financial.mapreduce` that aggregates daily OHLCV CSVs into monthly summaries per ticker.
+What happens if two tickers have overlapping date ranges but different
+column orders?
+  → Not handled — the mapper assumes a fixed Yahoo Finance CSV column
+    order (Date, Open, High, Low, Close, Volume).
+```
 
-- `OHLCVMapper` — parses each CSV row, emits `(symbol|month, OHLCV)`
-- `OHLCVCombiner` — partial aggregation per map task, to reduce shuffle volume
-- `OHLCVReducer` — final aggregation: month's Open (first), High (max), Low (min), Close (last), Volume (sum)
-- `OHLCVWritable` — the custom Hadoop `Writable` carrying an OHLCV record between map and reduce
-- `TickerPartitioner` — custom partitioner
-- `OHLCVDriver` / `FinancialOHLCVJob` — job driver, wired up with the Maven Shade plugin to produce a runnable uber-jar
+These are left as open questions rather than answered with an implementation that doesn't exist yet.
 
-It builds and runs against the Dockerized Hadoop cluster in `docker/docker-hadoop/` (a cloned [big-data-europe](https://github.com/big-data-europe) setup using `bde2020/hadoop-*` images) — see the README's "Getting started" section for the exact commands.
+## 16. What I Learned
 
-### `app-django/`
+```
+### Key Learnings
 
-A real Django project (`manage.py`, `webui/` settings) with six apps registered: `app_hadoop`, `app_ingest`, `app_ui`, `app_spark`, `app_dl`, `app_monitor`. Currently:
+• How Hadoop's map → combine → shuffle → reduce phases actually fit together,
+  by writing a real Combiner rather than just a Mapper/Reducer pair
+• Why Maven needs a JDK (not just a JRE) on PATH to compile anything
+• How to structure a multi-language project (Java/Hadoop, Python/Django) so
+  each part stays independently buildable
+• The value of writing a custom Hadoop Writable (OHLCVWritable) to carry a
+  structured record between map and reduce, instead of serializing to text
+```
 
-- `app_ingest` has working logic — `download.py` and `services/data_loader.py` pull historical OHLCV data via `yfinance` for a set of tickers.
-- `app_ui` has a working dashboard shell (`plotting.py`, an AdminLTE-themed template) for eventually visualizing pipeline output.
-- The remaining apps (`app_hadoop`, `app_spark`, `app_dl`, `app_monitor`) are scaffolded but not yet wired to actually trigger jobs — this is the next major piece of orchestration work.
+## 17. Roadmap
 
-### `docker/`
+```
+                    ROADMAP
 
-Vendored clones of [big-data-europe](https://github.com/big-data-europe)'s Docker images for Hadoop, Spark, Hive, HBase, Kafka, Flink, Cassandra, and a few others. Only `docker-hadoop/` is actively used right now, to run a single-node-style Hadoop cluster (namenode, datanode, resourcemanager, nodemanager, historyserver) for the MapReduce job above. The rest are there for when Spark/other components get wired in.
+         ┌───────────────┐
+         │      v0.4     │
+         │  (current)    │
+         │  Docs + Pages │
+         └───────┬───────┘
+                 ↓
+         ┌───────────────┐
+         │      v0.5     │
+         │  Validate &   │
+         │  partition    │
+         │  MapReduce    │
+         │  output       │
+         └───────┬───────┘
+                 ↓
+         ┌───────────────┐
+         │      v0.7     │
+         │  Spark feature│
+         │  pipeline     │
+         └───────┬───────┘
+                 ↓
+         ┌───────────────┐
+         │      v1.0     │
+         │  Django-driven│
+         │  orchestration│
+         └───────┬───────┘
+                 ↓
+         ┌───────────────┐
+         │      v1.5     │
+         │  First GPU    │
+         │  LSTM model   │
+         └───────────────┘
+```
 
-### `etl/`, `spark/`, `dl/`, `config/`, `scripts/`, `utils/`
+## 18. What This Project Demonstrates
 
-Early-stage and stub directories for the planned next layers:
+```
+This project demonstrates:
 
-- `etl/` — draft Python/pandas scripts (clean_data, convert_to_parquet, feature_engineering, create_windows) not yet assembled into a pipeline
-- `spark/` — a placeholder for Spark job entry points
-- `dl/` — currently empty; will hold model definitions and training scripts
-- `config/` — Spark and training config stubs
-- `scripts/` — small utilities (e.g. parsing Hadoop job output)
-- `utils/` — controller stubs Django will eventually use to invoke Hadoop/Spark/DL jobs as subprocesses
+✓ Hadoop MapReduce (Mapper, Combiner, Reducer, custom Writable)
+✓ Maven/Java build tooling
+✓ Docker Compose for local distributed-systems development
+✓ Separating orchestration (Django) from processing (Hadoop/Spark)
+✓ Honest project documentation — distinguishing what's built from what's planned
+```
 
-## Current status vs. roadmap
+## Credits / License
 
-**Working today:** OHLCV MapReduce aggregation on a Dockerized Hadoop cluster; `yfinance`-based data ingestion; a Django project with a working ingestion app and dashboard shell.
+**Author:** Aashish Bansal — [github.com/aashish22bansal](https://github.com/aashish22bansal)
 
-**Next up:**
-- Validate the MapReduce aggregation output against known values for a few tickers
-- Partition MapReduce output by symbol and date, with a secondary sort on date within each symbol
-- Wire the `etl/` scripts into an actual Spark pipeline
-- Have Django trigger the Hadoop and Spark jobs instead of running them manually
-- Train a first deep learning model (LSTM) on the processed output
-
-## License
-
-This project is licensed under a custom Attribution-Required License (see [LICENSE](LICENSE)) — any use, modification, or deployment of this project, including as a hosted service, must give clear, visible credit to the original author and link back to this repository.
-
-## Author
-
-Aashish Bansal — [github.com/aashish22bansal](https://github.com/aashish22bansal)
+Licensed under a custom Attribution-Required License — see [LICENSE](LICENSE). Any use, modification, or deployment of this project, including as a hosted service, must give clear, visible credit to the original author and link back to this repository.

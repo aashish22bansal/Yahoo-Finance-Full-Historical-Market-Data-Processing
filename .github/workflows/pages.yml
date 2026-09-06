@@ -4,7 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "site/**"
+      - "ABOUT.md"
+      - "site/template-head.html"
+      - "site/template-foot.html"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -22,10 +24,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Render ABOUT.md to HTML
+        run: |
+          mkdir -p _site
+          npx --yes marked --gfm ABOUT.md > /tmp/body.html
+          cat site/template-head.html /tmp/body.html site/template-foot.html > _site/index.html
+
       - uses: actions/configure-pages@v5
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: _site
 
   deploy:
     needs: build
